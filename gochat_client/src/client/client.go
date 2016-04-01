@@ -8,12 +8,12 @@
 package client
 
 import (
+	"bufio"
 	"fmt"
 	"net"
 	"net/rpc"
 	"os"
 	"strings"
-	"bufio"
 
 	"net/rpc/jsonrpc"
 )
@@ -21,7 +21,7 @@ import (
 const (
 	TCP         = "tcp"
 	SERVER_IP   = "127.0.0.1"
-	SERVER_PORT = "9180"          //服务器默认端口 9180
+	SERVER_PORT = "9180" //服务器默认端口 9180
 	SERVER_ADDR = SERVER_IP + ":" + SERVER_PORT
 	CLIENT_IP   = "127.0.0.1"
 )
@@ -36,9 +36,9 @@ type Message struct {
 }
 
 type Reply struct {
-	StateCode   int32 //状态码 正常：200  不正常其他
-	Content     string
-	Error       string
+	StateCode int32 //状态码 正常：200  不正常其他
+	Content   string
+	Error     string
 }
 
 //登录
@@ -57,7 +57,7 @@ func login(args []string) (reply *Reply) {
 		return
 	}
 	userName := args[1]
-	user := &User{UserName:userName,CurIp:CLIENT_IP,CurPort:port}
+	user := &User{UserName: userName, CurIp: CLIENT_IP, CurPort: port}
 	method := "User.Login"
 	replyCall := callServer(method, user, &Reply{})
 	result := <-replyCall.Done
@@ -66,7 +66,7 @@ func login(args []string) (reply *Reply) {
 		fmt.Println("Login success!")
 		curUser = user
 	} else {
-		fmt.Println("Login fail! Error msg:",reply.Error)
+		fmt.Println("Login fail! Error msg:", reply.Error)
 	}
 	return
 }
@@ -89,8 +89,8 @@ func sendTo(args []string) (reply *Reply) {
 	method := "User.SendTo"
 	toUserName := args[1]
 	messageContent := args[2]
-	toUser := &User{UserName:toUserName}
-	message := &Message{To:toUser,From:curUser,Content:messageContent}
+	toUser := &User{UserName: toUserName}
+	message := &Message{To: toUser, From: curUser, Content: messageContent}
 	replyCall := callServer(method, message, &Reply{})
 	result := <-replyCall.Done
 	reply = result.Reply.(*Reply)
@@ -153,12 +153,15 @@ func Start() {
 		line := string(b)
 		tokens := strings.Split(line, " ")
 		if handler, ok := handlers[tokens[0]]; ok {
-			handler(tokens)
+			mes := handler(tokens)
+			if mes != nil {
+				fmt.Printf("Code: %d  Error: %s\n", mes.StateCode, mes.Error)
+			}
 		}
 	}
 }
 
-func callServer(method string, args interface{}, reply interface{}) (*rpc.Call) {
+func callServer(method string, args interface{}, reply interface{}) *rpc.Call {
 	client, err := jsonrpc.Dial(TCP, SERVER_ADDR)
 	if err != nil {
 		fmt.Println("Dial error...")
@@ -178,15 +181,12 @@ Commands:
 	return nil
 }
 
-func getCommandHandler() map[string]func (args []string) *Reply {
-	return map[string] func ([]string) *Reply {
-		"start":startAccept,
-		"login":login,
-		"sendTo":sendTo,
-		"help<h>":Help,
-		"h":Help,
+func getCommandHandler() map[string]func(args []string) *Reply {
+	return map[string]func([]string) *Reply{
+		"start":  startAccept,
+		"login":  login,
+		"sendTo": sendTo,
+		"help":   Help,
+		"h":      Help,
 	}
 }
-
-
-

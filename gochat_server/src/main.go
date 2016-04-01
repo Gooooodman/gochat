@@ -9,11 +9,10 @@
 package main
 
 import (
-	"server"
+	"gochat/gochat/gochat_server/src/server"
 )
 
 func main() {
 	server.Help(nil)
 	server.Start()
 }
-

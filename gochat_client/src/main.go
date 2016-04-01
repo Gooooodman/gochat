@@ -7,7 +7,7 @@
  */
 package main
 
-import "client"
+import "gochat/gochat/gochat_client/src/client"
 
 func main() {
 	client.Help(nil)
